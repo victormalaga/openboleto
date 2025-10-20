@@ -42,9 +42,9 @@ use OpenBoleto\QrCodePix;
 
    <body>
 
-      <div style="width: 666px">
+      <div style="width: 666px; margin-top: 10%;">
          <?php if ($imprime_instrucoes_impressao): ?>
-         <div class="noprint info">
+         <div class="noprint info" style="margin-left: 5%;">
             <h2>Instruções de Impressão</h2>
             <ul>
                <li>Imprima em impressora jato de tinta (ink jet) ou laser em qualidade normal ou alta (Não use modo
@@ -71,10 +71,11 @@ use OpenBoleto\QrCodePix;
             </span>
             <?php endif ?>
             <br>
+            </br>
             <div class="linha-pontilhada" style="margin-bottom: 20px;">Recibo do pagador</div>
          </div>
          <?php endif ?>
-
+         
          <table class="table-boleto" cellpadding="0" cellspacing="0" border="0">
             <tbody>
                <tr>
@@ -159,7 +160,7 @@ use OpenBoleto\QrCodePix;
                      </div>
                   </td>
                   <td>
-                     <div class="titulo">Valor</div>
+                     <div class="titulo">xValor</div>
                      <div class="conteudo rtl">
                         <?php echo $valor_unitario ?>
                      </div>
@@ -181,6 +182,7 @@ use OpenBoleto\QrCodePix;
                   <td colspan="2">
                      <div class="conteudo"></div>
                      <div class="titulo">Demonstrativo</div>
+                     
                   </td>
                   <td>
                      <div class="titulo">(-) Outras deduções</div>

@@ -305,6 +305,19 @@ abstract class BoletoAbstract
      */
     protected $qrCode = null;
 
+    /**
+     * Valor obtido pelo código de barra do boleto, definido pela Febraban, em formato string.
+     * @var string|null
+     */
+    protected $numeroFebraban = null;
+
+    /**
+     * Valor da linha digitável.
+     * @var string|null
+     */
+    protected $linhaDigitavel = null;
+
+    /***************************************************************************************************************************************/
 
     /**
      * Construtor
@@ -1153,6 +1166,50 @@ abstract class BoletoAbstract
     }
 
     /**
+     * Define o valor do código de barras
+     *
+     * @param string|null $numeroFebraban
+     * @return BoletoAbstract
+     */
+    public function setNumeroFebraban($numeroFebraban)
+    {
+        $this->numeroFebraban = $numeroFebraban;
+        return $this;
+    }
+
+    /**
+     * Retorna o valor do código de barras
+     *
+     * @return string|null
+     */
+    public function getNumeroFebraban()
+    {
+        return $this->numeroFebraban;
+    }
+
+    /**
+     * Define o valor da linha digitável
+     *
+     * @param string|null $linhaDigitavel
+     * @return BoletoAbstract
+     */
+    public function setLinhaDigitavel($linhaDigitavel)
+    {
+        $this->linhaDigitavel = $linhaDigitavel;
+        return $this;
+    }
+
+    /**
+     * Retorna o valor da linha digitável
+     *
+     * @return string|null
+     */
+    public function getLinhaDigitavel()
+    {
+        return $this->linhaDigitavel;
+    }
+
+    /**
      * Retorna o logotipo do banco em Base64, pronto para ser inserido na página
      *
      * @return string
@@ -1296,7 +1353,7 @@ abstract class BoletoAbstract
 
         $this->data = array(
             'qr_code' => $this->getQrCode(),
-            'linha_digitavel' => $this->getLinhaDigitavel(),
+            'linha_digitavel' => $this->formataLinhaDigitavel(),
             'cedente' => $this->getCedente()->getNome(),
             'cedente_cpf_cnpj' => $this->getCedente()->getDocumento(),
             'cedente_endereco1' => $this->getCedente()->getEndereco(),
@@ -1383,16 +1440,6 @@ abstract class BoletoAbstract
     }
 
     /**
-     * Retorna o número Febraban
-     *
-     * @return string
-     */
-    public function getNumeroFebraban()
-    {
-        return (string) self::zeroFill($this->getCodigoBanco(), 3) . $this->getMoeda() . $this->getDigitoVerificador() . $this->getFatorVencimento() . $this->getValorZeroFill() . $this->getCampoLivre();
-    }
-
-    /**
      * Retorna o código do banco com o dígito verificador
      *
      * @return string
@@ -1406,55 +1453,55 @@ abstract class BoletoAbstract
     }
 
     /**
-     * Retorna a linha digitável do boleto
+     * Retorna a linha digitável do boleto, com a devida formatação
      *
      * @return string
      */
-    public function getLinhaDigitavel()
+    public function formataLinhaDigitavel()
     {
-        $chave = $this->getCampoLivre();
+        $chave = $this->getLinhaDigitavel();
 
-        // Break down febraban positions 20 to 44 into 3 blocks of 5, 10 and 10
-        // characters each.
-        $blocks = array(
-            '20-24' => substr($chave, 0, 5),
-            '25-34' => substr($chave, 5, 10),
-            '35-44' => substr($chave, 15, 10),
-        );
+        /**
+         * Campo 1: AAABC.CCCCX 
+         *  A = Número Código da Instituição Destinatária 
+         *  B = Código da moeda (9) -Real 
+         *  C = Posições 20 a 24 do código de barras 
+         *  X = DV do Campo 1 (calculado de acordo com o Módulo 10) 
+         */
+        $campo1 = substr($chave, 0, 10);
+        $campo1 = substr_replace($campo1, '.', 5, 0);
 
-        // Concatenates bankCode + currencyCode + first block of 5 characters and
-        // calculates its check digit for part1.
-        $check_digit = static::modulo10($this->getCodigoBanco() . $this->getMoeda() . $blocks['20-24']);
+        /**
+         * Campo 2: DDDDD.DDDDDY 
+         *  D = Posições 25 a 34 do código de barras 
+         *  Y = DV do Campo 2 (calculado de acordo com o Módulo 10)
+         */
+        $campo2 = substr($chave, 10, 11);
+        $campo2 = substr_replace($campo2, '.', 5, 0);
 
-        // Shift in a dot on block 20-24 (5 characters) at its 2nd position.
-        $blocks['20-24'] = substr_replace($blocks['20-24'], '.', 1, 0);
+        /**
+         * Campo 3: EEEEE.EEEEEZ 
+         *  F = Posições 35 a 44 do código de barras 
+         *  Z =DV do Campo 3 (calculado de acordo com o Módulo 10) 
+         */
+        $campo3 = substr($chave, 21, 11);
+        $campo3 = substr_replace($campo3, '.', 5, 0);
 
-        // Concatenates bankCode + currencyCode + first block of 5 characters +
-        // checkDigit.
-        $part1 = $this->getCodigoBanco() . $this->getMoeda() . $blocks['20-24'] . $check_digit;
+        /**
+         * Campo 4: K 
+         *  K = DV do código de barras (calculado de acordo com o Módulo 11)
+         */
+        $campo4 = substr($chave, 32, 1);
 
-        // Calculates part2 check digit from 2nd block of 10 characters.
-        $check_digit = static::modulo10($blocks['25-34']);
+        /**
+         * Campo 5: UUUUVVVVVVVVVV 
+         *  U = Fator de Vencimento (cálculo conforme anexo VI) 
+         *  V = Valor do boleto de pagamento (com duas casas decimais, sem ponto e 
+         *    vírgula. Em caso de moeda variável, informar zeros)
+         */
+        $campo5 = substr($chave, 33, 14);
 
-        $part2 = $blocks['25-34'] . $check_digit;
-        // Shift in a dot at its 6th position.
-        $part2 = substr_replace($part2, '.', 5, 0);
-
-        // Calculates part3 check digit from 3rd block of 10 characters.
-        $check_digit = static::modulo10($blocks['35-44']);
-
-        // As part2, we do the same process again for part3.
-        $part3 = $blocks['35-44'] . $check_digit;
-        $part3 = substr_replace($part3, '.', 5, 0);
-
-        // Check digit for the human readable number.
-        $cd = $this->getDigitoVerificador();
-
-        // Put part4 together.
-        $part4 = $this->getFatorVencimento() . $this->getValorZeroFill();
-
-        // Now put everything together.
-        return "$part1 $part2 $part3 $cd $part4";
+        return "$campo1 $campo2 $campo3 $campo4 $campo5";
     }
 
     /**
