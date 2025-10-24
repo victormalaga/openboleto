@@ -317,6 +317,13 @@ abstract class BoletoAbstract
      */
     protected $linhaDigitavel = null;
 
+    /**
+     * Valor de identificação do boleto. Recebido externamente.
+     *  --VP
+     * @var string|null
+     */
+    protected $nossoNumeroRecebido = null;
+
     /***************************************************************************************************************************************/
 
     /**
@@ -1278,6 +1285,30 @@ abstract class BoletoAbstract
         }
 
         return (string) $numero;
+    }
+
+     /**
+     * Define o valor do Nosso Número recebido externamente.
+     *  --VP
+     *
+     * @param string|null $nossoNumeroRecebido
+     * @return BoletoAbstract
+     */
+    public final function setNossoNumeroRecebido($nossoNumeroRecebido)
+    {
+        $this->nossoNumeroRecebido = $nossoNumeroRecebido;
+        return $this;
+    }
+
+    /**
+     * Retorna o Nosso Número recebido externamente.
+     *  --VP
+     * 
+     * @return string
+     */
+    public function getNossoNumeroRecebido()
+    {
+        return $this->nossoNumeroRecebido;
     }
 
     /**

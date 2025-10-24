@@ -100,13 +100,20 @@ class BancoDoBrasil extends BoletoAbstract
     }
 
     /**
-     * Gera o Nosso Número.
+     * Gerava o Nosso Número.
+     * Estarei realizando a geração externamente, então esta função só
+     * precisa receber o valor externo e repassar.
+     *  --VP
      *
      * @throws Exception
      * @return string
      */
     protected function gerarNossoNumero()
     {
+        $nnRecebido = $this->nossoNumeroRecebido;
+        return $nnRecebido;
+
+        /*      
         $convenio = $this->getConvenio();
         $sequencial = $this->getSequencial();
         $numero = null;
@@ -143,7 +150,8 @@ class BancoDoBrasil extends BoletoAbstract
             $numero .= '-' . $modulo['digito'];
         }
 
-        return $numero;
+        return $numero; 
+        */
     }
 
     /**
